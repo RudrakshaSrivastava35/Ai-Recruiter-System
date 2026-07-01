@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redrob AI — Candidate Ranker Dashboard</title>
+  <meta name="description" content="Top 100 candidates ranked from a 100K pool for the Redrob Senior AI Engineer role." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & tokens ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #060b18;
+      --bg2:         #0d1526;
+      --bg3:         #111d35;
+      --card:        rgba(13, 21, 38, 0.85);
+      --border:      rgba(99, 102, 241, 0.14);
+      --border-h:    rgba(99, 102, 241, 0.45);
+      --primary:     #6366f1;
+      --primary-l:   #818cf8;
+      --violet:      #8b5cf6;
+      --cyan:        #06b6d4;
+      --green:       #10b981;
+      --amber:       #f59e0b;
+      --red:         #ef4444;
+      --gold:        #f59e0b;
+      --silver:      #94a3b8;
+      --bronze:      #cd7c2c;
+      --txt:         #f1f5f9;
+      --txt2:        #94a3b8;
+      --txt3:        #475569;
+      --radius:      14px;
+      --radius-sm:   8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glow */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 15% 10%, rgba(99,102,241,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 90%, rgba(139,92,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(6,182,212,.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
+    /* ── Layout helpers ─────────────────────────────────────────── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ── HEADER ─────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0d1526 0%, #111d35 50%, #0d1526 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+
+    .header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
+    .brand-logo {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 20px rgba(99,102,241,.4);
+    }
+
+    .brand-text h1 {
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--primary-l) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p { font-size: 12px; color: var(--txt2); font-weight: 400; margin-top: 1px; }
+
+    .header-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .badge {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .badge-primary { background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.3); color: var(--primary-l); }
+    .badge-green   { background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3); color: #34d399; }
+
+    /* ── STATS STRIP ─────────────────────────────────────────────── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 32px 0 8px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      text-align: center;
+      backdrop-filter: blur(16px);
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-h);
+      box-shadow: 0 8px 32px rgba(99,102,241,.15);
+    }
+
+    .stat-icon { font-size: 26px; margin-bottom: 10px; }
+
+    .stat-value {
+      font-size: 30px; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-l), var(--violet));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label { font-size: 12px; color: var(--txt2); margin-top: 4px; font-weight: 500; letter-spacing: .03em; text-transform: uppercase; }
+
+    /* ── CONTROLS ────────────────────────────────────────────────── */
+    .controls {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      padding: 24px 0 20px;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1; min-width: 240px;
+      position: relative;
+    }
+
+    .search-wrap .icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--txt3); font-size: 15px; pointer-events: none;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px 11px 40px;
+      color: var(--txt);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .search-wrap input::placeholder { color: var(--txt3); }
+    .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+
+    select {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      color: var(--txt);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+
+    select:focus { border-color: var(--primary); }
+
+    .results-count {
+      font-size: 13px; color: var(--txt2);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .results-count span { color: var(--primary-l); font-weight: 700; }
+
+    /* ── CANDIDATES GRID ─────────────────────────────────────────── */
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+      padding-bottom: 60px;
+    }
+
+    /* ── CANDIDATE CARD ──────────────────────────────────────────── */
+    .cand-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      backdrop-filter: blur(16px);
+      transition: transform .25s ease, border-color .25s, box-shadow .25s;
+      cursor: default;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: cardIn .4s ease forwards;
+    }
+
+    .cand-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-h);
+      box-shadow: 0 12px 40px rgba(99,102,241,.18);
+    }
+
+    @keyframes cardIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stagger delay — applied inline via JS */
+    .cand-card.rank-1  { border-color: rgba(245,158,11,.35); }
+    .cand-card.rank-2  { border-color: rgba(148,163,184,.25); }
+    .cand-card.rank-3  { border-color: rgba(205,124,44,.25); }
+    .cand-card.top-10  { border-color: rgba(99,102,241,.25); }
+
+    /* Card header */
+    .card-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .rank-pill {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-weight: 700; font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .rank-1  { background: linear-gradient(135deg,rgba(245,158,11,.25),rgba(234,179,8,.15)); color:#fbbf24; border:1px solid rgba(245,158,11,.4); }
+    .rank-2  { background: rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
+    .rank-3  { background: rgba(205,124,44,.15); color:#cd7c2c; border:1px solid rgba(205,124,44,.3); }
+    .rank-top10  { background: rgba(99,102,241,.15); color:var(--primary-l); border:1px solid rgba(99,102,241,.3); }
+    .rank-default{ background: rgba(30,41,59,.7); color:var(--txt2); border:1px solid rgba(51,65,85,.5); }
+
+    /* Score section */
+    .score-block { text-align: right; flex-shrink: 0; }
+
+    .score-num {
+      font-size: 22px; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-l), var(--violet));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .score-bar-wrap {
+      width: 120px; height: 5px;
+      background: rgba(51,65,85,.6);
+      border-radius: 3px; margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--violet));
+      border-radius: 3px;
+      width: 0%;
+      transition: width 1s ease;
+    }
+
+    /* Candidate info */
+    .cand-name { font-size: 16px; font-weight: 700; color: var(--txt); margin-bottom: 2px; }
+
+    .cand-role {
+      font-size: 13px; color: var(--txt2); margin-bottom: 12px;
+    }
+
+    .cand-role .at { color: var(--txt3); margin: 0 2px; }
+    .cand-role .company { color: var(--primary-l); font-weight: 600; }
+
+    /* Meta pills */
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .meta-pill {
+      background: rgba(30,41,59,.8);
+      border: 1px solid rgba(51,65,85,.6);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 11px; color: var(--txt2);
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* Skills */
+    .skills-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .skill-chip {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .chip-ai    { background:rgba(99,102,241,.2); border-color:rgba(99,102,241,.4); color:#a5b4fc; }
+    .chip-fw    { background:rgba(139,92,246,.2); border-color:rgba(139,92,246,.4); color:#c4b5fd; }
+    .chip-db    { background:rgba(6,182,212,.2);  border-color:rgba(6,182,212,.4);  color:#67e8f9; }
+    .chip-cloud { background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3); color:#6ee7b7; }
+    .chip-other { background:rgba(51,65,85,.5);   border-color:rgba(71,85,105,.5);  color:var(--txt2); }
+
+    /* Signals */
+    .signals-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .sig {
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; gap: 4px;
+      border: 1px solid transparent;
+    }
+
+    .sig-green  { background:rgba(16,185,129,.15); border-color:rgba(16,185,129,.3); color:#34d399; }
+    .sig-purple { background:rgba(99,102,241,.15); border-color:rgba(99,102,241,.3); color:var(--primary-l); }
+    .sig-cyan   { background:rgba(6,182,212,.15);  border-color:rgba(6,182,212,.3);  color:#67e8f9; }
+    .sig-amber  { background:rgba(245,158,11,.15); border-color:rgba(245,158,11,.3); color:#fbbf24; }
+    .sig-gray   { background:rgba(51,65,85,.5);    border-color:rgba(71,85,105,.5);  color:var(--txt2); }
+    .sig-red    { background:rgba(239,68,68,.12);  border-color:rgba(239,68,68,.25); color:#fca5a5; }
+
+    /* Reasoning */
+    .reasoning {
+      background: rgba(30,41,59,.6);
+      border: 1px solid rgba(51,65,85,.5);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px; color: var(--txt2);
+      line-height: 1.55;
+      position: relative;
+    }
+
+    .reasoning::before {
+      content: '💡';
+      margin-right: 6px;
+    }
+
+    /* ── EMPTY STATE ──────────────────────────────────────────────── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--txt3);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 16px; }
+
+    /* ── DOWNLOAD BUTTON ─────────────────────────────────────────── */
+    .fab {
+      position: fixed; bottom: 28px; right: 28px;
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      color: #fff; text-decoration: none;
+      padding: 14px 22px;
+      border-radius: 50px;
+      font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 8px 32px rgba(99,102,241,.45);
+      transition: transform .2s, box-shadow .2s;
+      z-index: 200;
+    }
+
+    .fab:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(99,102,241,.6);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+      text-align: center;
+      font-size: 12px; color: var(--txt3);
+    }
+
+    footer a { color: var(--primary-l); text-decoration: none; }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .candidates-grid { grid-template-columns: 1fr; }
+      .score-bar-wrap { width: 80px; }
+      .header-badges { display: none; }
+    }
+
+    @media (max-width: 900px) {
+      .candidates-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── HEADER ──────────────────────────────────────────────────── -->
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-logo">🤖</div>
+          <div class="brand-text">
+            <h1>Redrob AI Ranker</h1>
+            <p>Intelligent Candidate Discovery &amp; Ranking Challenge</p>
+          </div>
+        </div>
+        <div class="header-badges">
+          <span class="badge badge-primary">📊 {{ stats.total_screened | int | format_number }} Screened</span>
+          <span class="badge badge-green">✅ Submission Valid</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- ── STATS STRIP ──────────────────────────────────────────── -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" id="cnt-screened">0</div>
+        <div class="stat-label">Candidates Screened</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value">{{ "%.4f" | format(stats.top_score) }}</div>
+        <div class="stat-label">Top Score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value" id="cnt-ai">0</div>
+        <div class="stat-label">AI Engineers in Top 10</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🇮🇳</div>
+        <div class="stat-value" id="cnt-india">0</div>
+        <div class="stat-label">India-based in Top 20</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value">{{ stats.runtime_seconds }}s</div>
+        <div class="stat-label">Ranking Runtime (CPU)</div>
+      </div>
+    </div>
+
+    <!-- ── CONTROLS ─────────────────────────────────────────────── -->
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input type="search" id="searchInput" placeholder="Search by name, title, company, skills..." />
+      </div>
+
+      <select id="countryFilter">
+        <option value="">🌍 All Countries</option>
+        {% for c in countries %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+
+      <select id="workModeFilter">
+        <option value="">🖥️ All Work Modes</option>
+        {% for wm in work_modes %}
+        <option value="{{ wm }}">{{ wm | capitalize }}</option>
+        {% endfor %}
+      </select>
+
+      <select id="sortBy">
+        <option value="rank">↕ Sort: Rank</option>
+        <option value="score">↕ Sort: Score</option>
+        <option value="yoe">↕ Sort: Experience</option>
+        <option value="github_score">↕ Sort: GitHub Score</option>
+        <option value="response_rate">↕ Sort: Response Rate</option>
+      </select>
+
+      <div class="results-count" id="resultCount">
+        Showing <span id="visibleCount">{{ candidates | length }}</span> of <span>{{ candidates | length }}</span>
+      </div>
+    </div>
+
+    <!-- ── CANDIDATES GRID ───────────────────────────────────────── -->
+    <div class="candidates-grid" id="grid"></div>
+
+  </div>
+
+  <!-- ── DOWNLOAD FAB ─────────────────────────────────────────────── -->
+  <a href="/download" class="fab">
+    ⬇️ Download CSV
+  </a>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────── -->
+  <footer>
+    <p>Redrob Hackathon — Intelligent Candidate Discovery &amp; Ranking Challenge &nbsp;|&nbsp; Built with Python · Flask · Zero third-party ML deps</p>
+  </footer>
+
+  <!-- ── SCRIPT ──────────────────────────────────────────────────── -->
+  <script>
+    // Injected server-side — full candidate data
+    const ALL = {{ candidates | tojson }};
+
+    // ── Skill chip categorisation ──────────────────────────────────
+    const AI_CORE   = ['nlp','embed','rag','retriev','transform','bert','llm','fine-tun','lora','rlhf','rank','milvus','faiss','pinecone','weaviate','qdrant','sentence','rerank','bm25','semantic'];
+    const FRAMEWORKS= ['pytorch','tensorflow','keras','scikit','hugging','mlflow','bentoml','mlops','weights','wandb'];
+    const VECTOR_DB = ['elasticsearch','opensearch','databricks','airflow','spark','kafka','beam'];
+    const CLOUD     = ['aws','gcp','azure','cloud'];
+
+    function chipClass(skill) {
+      const s = skill.toLowerCase();
+      if (AI_CORE.some(k => s.includes(k)))    return 'chip-ai';
+      if (FRAMEWORKS.some(k => s.includes(k))) return 'chip-fw';
+      if (VECTOR_DB.some(k => s.includes(k)))  return 'chip-db';
+      if (CLOUD.some(k => s.includes(k)))      return 'chip-cloud';
+      return 'chip-other';
+    }
+
+    // ── Rank pill class ─────────────────────────────────────────────
+    function rankClass(rank) {
+      if (rank === 1) return 'rank-1';
+      if (rank === 2) return 'rank-2';
+      if (rank === 3) return 'rank-3';
+      if (rank <= 10) return 'rank-top10';
+      return 'rank-default';
+    }
+
+    function rankMedal(rank) {
+      return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    }
+
+    function cardBorderClass(rank) {
+      if (rank === 1) return 'rank-1';
+      if (rank === 2) return 'rank-2';
+      if (rank === 3) return 'rank-3';
+      if (rank <= 10) return 'top-10';
+      return '';
+    }
+
+    // ── Signal badges ──────────────────────────────────────────────
+    function openWorkBadge(flag) {
+      return flag
+        ? `<span class="sig sig-green">✅ Open to Work</span>`
+        : `<span class="sig sig-gray">🔒 Not Looking</span>`;
+    }
+
+    function githubBadge(score) {
+      if (score < 0) return `<span class="sig sig-gray">🐙 No GitHub</span>`;
+      const cls = score >= 70 ? 'sig-purple' : score >= 40 ? 'sig-cyan' : 'sig-gray';
+      return `<span class="sig ${cls}">🐙 ${score.toFixed(0)}/100</span>`;
+    }
+
+    function responseBadge(rate) {
+      const pct = (rate * 100).toFixed(0);
+      const cls = rate >= 0.7 ? 'sig-green' : rate >= 0.4 ? 'sig-cyan' : 'sig-gray';
+      return `<span class="sig ${cls}">💬 ${pct}%</span>`;
+    }
+
+    function noticeBadge(days) {
+      const cls = days <= 30 ? 'sig-green' : days <= 60 ? 'sig-cyan' : days <= 90 ? 'sig-amber' : 'sig-red';
+      return `<span class="sig ${cls}">🕐 ${days}d notice</span>`;
+    }
+
+    function modeBadge(mode) {
+      if (!mode) return '';
+      const icons = { remote:'🌐', hybrid:'🏢', onsite:'🏢', flexible:'🔀' };
+      return `<span class="sig sig-gray">${icons[mode] || '🖥️'} ${mode}</span>`;
+    }
+
+    // ── Render a single card ────────────────────────────────────────
+    function renderCard(c, idx) {
+      const skills = c.skills.slice(0, 5)
+        .map(s => `<span class="skill-chip ${chipClass(s)}">${s}</span>`)
+        .join('');
+
+      const salaryStr = (c.salary_min && c.salary_max)
+        ? `💰 ₹${c.salary_min}–${c.salary_max} LPA`
+        : '';
+
+      return `
+        <div class="cand-card ${cardBorderClass(c.rank)}"
+             style="animation-delay:${Math.min(idx * 35, 600)}ms"
+             data-search="${(c.name+' '+c.title+' '+c.company+' '+c.skills.join(' ')+' '+c.reasoning+' '+c.country+' '+c.work_mode).toLowerCase()}"
+             data-country="${c.country}"
+             data-work-mode="${c.work_mode}"
+             data-rank="${c.rank}"
+             data-score="${c.score}"
+             data-yoe="${c.yoe}"
+             data-github="${c.github_score}"
+             data-response="${c.response_rate}">
+
+          <!-- Header row -->
+          <div class="card-top">
+            <span class="rank-pill ${rankClass(c.rank)}">${rankMedal(c.rank)} #${c.rank}</span>
+            <div class="score-block">
+              <div class="score-num">${c.score.toFixed(4)}</div>
+              <div class="score-bar-wrap">
+                <div class="score-bar-fill" data-score="${c.score}"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Identity -->
+          <div class="cand-name">${c.name}</div>
+          <div class="cand-role">
+            ${c.title}
+            <span class="at">@</span>
+            <span class="company">${c.company}</span>
+          </div>
+
+          <!-- Meta pills -->
+          <div class="meta-row">
+            ${c.location ? `<span class="meta-pill">📍 ${c.location}</span>` : ''}
+            <span class="meta-pill">⏱️ ${c.yoe} yrs exp</span>
+            ${c.career_count ? `<span class="meta-pill">💼 ${c.career_count} roles</span>` : ''}
+            ${salaryStr ? `<span class="meta-pill">${salaryStr}</span>` : ''}
+          </div>
+
+          <!-- Skills -->
+          <div class="skills-row">${skills || '<span style="color:var(--txt3);font-size:12px">No skills listed</span>'}</div>
+
+          <!-- Behavioral signals -->
+          <div class="signals-row">
+            ${openWorkBadge(c.open_to_work)}
+            ${githubBadge(c.github_score)}
+            ${responseBadge(c.response_rate)}
+            ${noticeBadge(c.notice_days)}
+            ${modeBadge(c.work_mode)}
+          </div>
+
+          <!-- Reasoning -->
+          ${c.reasoning
+            ? `<div class="reasoning">${c.reasoning}</div>`
+            : ''}
+        </div>
+      `;
+    }
+
+    // ── Render grid ─────────────────────────────────────────────────
+    const grid = document.getElementById('grid');
+    const visibleCountEl = document.getElementById('visibleCount');
+
+    function render(list) {
+      if (list.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <p>No candidates match your filters. Try adjusting your search.</p>
+          </div>`;
+        visibleCountEl.textContent = '0';
+        return;
+      }
+
+      grid.innerHTML = list.map((c, i) => renderCard(c, i)).join('');
+      visibleCountEl.textContent = list.length;
+
+      // Animate score bars
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.score-bar-fill').forEach(el => {
+          const s = parseFloat(el.dataset.score);
+          setTimeout(() => { el.style.width = (s * 100) + '%'; }, 50);
+        });
+      });
+    }
+
+    // ── Filter + sort ───────────────────────────────────────────────
+    const searchInput  = document.getElementById('searchInput');
+    const countryFilter = document.getElementById('countryFilter');
+    const workModeFilter = document.getElementById('workModeFilter');
+    const sortBy = document.getElementById('sortBy');
+
+    function applyFilters() {
+      const q    = searchInput.value.toLowerCase().trim();
+      const ctry = countryFilter.value;
+      const wm   = workModeFilter.value;
+      const sort = sortBy.value;
+
+      let list = ALL.filter(c => {
+        if (q && !c['data-search'] && !`${c.name} ${c.title} ${c.company} ${c.skills.join(' ')} ${c.reasoning} ${c.country} ${c.work_mode}`.toLowerCase().includes(q)) return false;
+        if (q) {
+          const haystack = `${c.name} ${c.title} ${c.company} ${c.skills.join(' ')} ${c.reasoning} ${c.country} ${c.work_mode}`.toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        if (ctry && c.country !== ctry) return false;
+        if (wm   && c.work_mode !== wm) return false;
+        return true;
+      });
+
+      const sortMap = {
+        rank:          (a, b) => a.rank - b.rank,
+        score:         (a, b) => b.score - a.score,
+        yoe:           (a, b) => b.yoe - a.yoe,
+        github_score:  (a, b) => b.github_score - a.github_score,
+        response_rate: (a, b) => b.response_rate - a.response_rate,
+      };
+
+      list.sort(sortMap[sort] || sortMap.rank);
+      render(list);
+    }
+
+    [searchInput, countryFilter, workModeFilter, sortBy].forEach(el =>
+      el.addEventListener('input', applyFilters)
+    );
+
+    // ── Count-up animation ──────────────────────────────────────────
+    function countUp(id, target, duration = 1200) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const start = Date.now();
+      const step = () => {
+        const t = Math.min((Date.now() - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.floor(ease * target).toLocaleString();
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // ── Init ────────────────────────────────────────────────────────
+    render(ALL);
+    countUp('cnt-screened', {{ stats.total_screened }}, 1500);
+    countUp('cnt-ai',       {{ stats.ai_eng_top10 }},  800);
+    countUp('cnt-india',    {{ stats.india_top20 }},   900);
+  </script>
+</body>
+</html>

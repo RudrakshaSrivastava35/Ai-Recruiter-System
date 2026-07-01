@@ -1,0 +1,5 @@
+# Core dependencies
+flask>=3.0
+
+# Development / validation only
+pytest>=7.0

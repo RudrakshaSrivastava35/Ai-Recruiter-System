@@ -1,0 +1,77 @@
+team_name: "HACKHOLICS"
+
+primary_contact:
+  name: "Rudraksha Srivastava"
+  email: "rudrakshasri35@gmail.com"
+  phone: "+91-9076797468"
+
+team_members:
+  - name: "Rudraksha Srivastava"
+    email: "rudrakshasri35@gmail.com"
+    role: "ML Engineer"
+
+    name: "Dolly"
+    email: "dolly21032005@gmail.com"
+    role: "Data Engineer"
+
+    name: "Riya Singh"
+    email: ""
+    role: "Software Engineer"
+
+    name: "Prawin kumar"
+    email: "kumarprawin888@gmail.com"
+    role: "Research Analyst"
+
+github_repo: "https://github.com/RudrakshaSrivastava35/Ai-Recruiter-System.git"
+
+sandbox_link: "https://huggingface.co/spaces/YOUR_USERNAME/redrob-ranker"
+
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+compute:
+  platform: "Local CPU machine"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.11"
+  os: "Windows 11"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
+
+ai_tools_used:
+  - "Claude"
+
+ai_usage_summary: |
+  Used Claude for code review, architecture discussion, and component design.
+  No candidate data was fed to any LLM. All scoring logic is deterministic
+  Python running locally with zero network calls.
+
+methodology_summary: |
+  Rule-based, multi-component ranker with five scoring dimensions:
+  (1) Skill taxonomy match — 40% weight. Candidate skills are matched
+      against a curated 50-entry taxonomy of AI/ML skills relevant to the
+      Senior AI Engineer JD. Each match is weighted by taxonomy tier,
+      proficiency level, endorsement count, usage duration, and Redrob
+      platform assessment scores.
+  (2) Career trajectory — 25% weight. Current/most-recent title is scored
+      against a relevance map (ML Engineer → 1.0, Backend Engineer → 0.55,
+      HR Manager → 0.08). Past roles contribute with decay.
+  (3) Experience bell curve — 15% weight. Gaussian centred at 7 years
+      (JD sweet spot 5–9 years) with σ=3.5.
+  (4) Behavioral signals — 15% weight. Weighted composite of 7 Redrob
+      signals: recruiter response rate, GitHub activity score, recency,
+      interview completion rate, profile completeness, search visibility,
+      notice period.
+  (5) Education — 5% weight. Institution tier + field-of-study bonus.
+  
+  Post-scoring: availability multiplier (0.65–1.0) based on open-to-work
+  flag + last-active recency; honeypot penalty (×0.20) applied after four
+  independent heuristic checks. Runtime: ~30–60 seconds on a modern CPU.
+
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
