@@ -24,7 +24,7 @@ team_members:
 
 github_repo: "https://github.com/RudrakshaSrivastava35/Ai-Recruiter-System.git"
 
-sandbox_link: "https://huggingface.co/spaces/YOUR_USERNAME/redrob-ranker"
+sandbox_link: " https://huggingface.co/spaces/Rudraksha35/redrob-ranker"
 
 reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
 
@@ -41,11 +41,13 @@ compute:
 
 ai_tools_used:
   - "Claude"
+    "ChatGPT"
 
 ai_usage_summary: |
   Used Claude for code review, architecture discussion, and component design.
   No candidate data was fed to any LLM. All scoring logic is deterministic
   Python running locally with zero network calls.
+  Used ChatGpt for the research and understanding the fundamentals.
 
 methodology_summary: |
   Rule-based, multi-component ranker with five scoring dimensions:
